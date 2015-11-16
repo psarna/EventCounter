@@ -1,45 +1,38 @@
-#ifndef __EVENT_COUNTER_H
+#ifndef __EVENT_COUNTER_iH
 #define __EVENT_COUNTER_H
 
-#include <deque>
-#include <set>
+#include <array>
+#include <limits>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
-struct Result {
-	long min;
-	long max;
-	long total;
-	long count;
-};
+#include "cbuf.h"
 
-template<int N, typename Key = std::string, typename Value = long>
+
+template<int N, int KeyCount, typename Key = long, typename Value = long>
 class EventCounter {
-	struct Event {
-		Key key;
-		Value value;
-	};
-
-	struct Events {
-		unsigned int timestamp;
-		std::vector<Event> data;
-	};
-
-
-	struct PartialResult {
-		std::set<Value> values;
+public:
+	struct Result {
+		Value min;
+		Value max;
 		Value total;
 		long count;
 
-		void add(const Event &event);
-		void remove(const Event &event);
+		Result(Value value) : min(value), max(value), total(value), count(1) {
+		}
+
+		Result() : min(std::numeric_limits<Value>::max()), max(std::numeric_limits<Value>::min()),
+			total(0), count(0) {
+		}
+
+		void add(const Result& result);
+		void remove(const Result& result);
+		void print() const {
+			printf(">%ld %ld %ld %ld\n", min, max, total, count);
+		}
 	};
 
-typedef std::unordered_map<Key, PartialResult> PartialResults;
-
-public:
-	EventCounter() : queue_(N+1), partial_results_(), highest_timestamp_() {
+	EventCounter() : queue_(N), partial_results_(), highest_timestamp_() {
 	}
 
 	void registerEvent(const Key &key, Value value, unsigned int timestamp);
@@ -47,12 +40,26 @@ public:
 	void getTopKeys(std::vector<std::pair<Key, Result>> &results,
 			unsigned int time_period, int n);
 
+	void print() const {
+		for (auto &x : partial_results_) {
+			for (auto &y : x) {
+				y.print();
+			}
+			printf("######\n");
+		}
+		printf("buffer %ld %ld:\n", queue_.start, queue_.end);
+		for (int i = 0; i < N; ++i) {
+			queue_[i][0].print();
+		} printf("________\n");
+	}
+
 private:
-	void updatePeriod(const Events &events, int period);
+	typedef std::array<Result, KeyCount> Results;
+	void updatePeriod(const Results &results, int period);
 
 	unsigned int highest_timestamp_;
-	std::deque<Events> queue_;
-	std::array<PartialResults, sizeof(N)> partial_results_;
+	cbuf<Results, N+1> queue_;
+	std::array<Results, sizeof(N)> partial_results_;
 };
 
 #endif
