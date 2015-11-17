@@ -111,6 +111,8 @@ typedef Counter::Result Result;
 
 int main(void) {
 	Counter ec;
+
+	printf("\n\n=== registerEvent() tests ===\n\n");
 	ec.print();
 	ec.registerEvent(0, 3, 1);
 	ec.print();
@@ -122,19 +124,18 @@ int main(void) {
 	ec.print();
 	ec.registerEvent(0, 7, 5);
 	ec.print();
-	exit(1);
+
+	printf("\n\n=== query() tests ===\n\n");
 	Result result;
 
 	ec.print();
 	ec.query(0, 2, result);
-	ec.print();
-	printf("-----\n");
-
-	printf("Query:\n");
+	printf("Query result: ");
 	result.print();
+
 	Result res2;
 	ec.query(0, 1, res2);
 
-	printf("Query:\n");
+	printf("Query result: ");
 	res2.print();
 }

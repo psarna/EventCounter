@@ -28,9 +28,9 @@ public:
 		void add(const Result& result);
 		void remove(const Result& result);
 		void print() const {
-			printf("(%ld, %ld, %ld, %ld)\n",
-					min == std::numeric_limits<Value>::max() ? 0 : min,
-					max == std::numeric_limits<Value>::min() ? 0 : max,
+			printf("(%s, %s, %ld, %ld)\n",
+					min == std::numeric_limits<Value>::max() ? "X" : std::to_string(min).c_str(),
+					max == std::numeric_limits<Value>::min() ? "X" : std::to_string(max).c_str(),
 					total,
 					count);
 		}
@@ -56,7 +56,7 @@ public:
 		}
 		printf("\tBuffer (start = %ld, end = %ld) :\n", queue_.start, queue_.end);
 		for (int i = 0; i < N; ++i) {
-			printf("\t\t %d: ", i);
+			printf("\t\t%d: ", i);
 			queue_[i][0].print();
 		}
 		printf("}\n");
