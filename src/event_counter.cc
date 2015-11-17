@@ -58,8 +58,7 @@ void EventCounter<N, KeyCount, Key, Value>::updatePeriod(const Results &results,
 	}
 
 	// Edge case 1: Removing from last partial result
-	if (period == std::log2(N)) {
-		printf("last case\n");
+	if (period == log2<N>()) {
 		Results &curr_results = partial_results_[period - 1];
 
 		for (int i = 0; i < results.size(); ++i) {
@@ -88,13 +87,13 @@ void EventCounter<N, KeyCount, Key, Value>::registerEvent(const Key &key, Value 
 		// Add newly registered event to queue
 		queue_.put(EventCounter::newResults(key, value));
 		// Update partial results for all periods
-		for (int period = 0; period < (int)std::log2(N); period++) {
+		for (int period = 0; period < log2<N>(); period++) {
 			Results &results = queue_[(1 << period) - 1];
 			updatePeriod(results, period);
 		}
 		// Remove the oldest record from the queue and update partial results
 		Results &last_results = queue_.get();
-		updatePeriod(last_results, std::log2(N));
+		updatePeriod(last_results, log2<N>());
 		highest_timestamp_ = timestamp;
 	}
 }

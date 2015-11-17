@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "cbuf.h"
+#include "log2.h"
 
 template<int N, int KeyCount, typename Key = long, typename Value = long>
 class EventCounter {
