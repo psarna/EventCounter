@@ -1,4 +1,4 @@
-#ifndef __EVENT_COUNTER_iH
+#ifndef __EVENT_COUNTER_H
 #define __EVENT_COUNTER_H
 
 #include <array>
@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "cbuf.h"
-
 
 template<int N, int KeyCount, typename Key = long, typename Value = long>
 class EventCounter {
@@ -28,7 +27,11 @@ public:
 		void add(const Result& result);
 		void remove(const Result& result);
 		void print() const {
-			printf(">%ld %ld %ld %ld\n", min, max, total, count);
+			printf("(%ld, %ld, %ld, %ld)\n",
+					min == std::numeric_limits<Value>::max() ? 0 : min,
+					max == std::numeric_limits<Value>::min() ? 0 : max,
+					total,
+					count);
 		}
 	};
 
@@ -41,21 +44,33 @@ public:
 			unsigned int time_period, int n);
 
 	void print() const {
-		for (auto &x : partial_results_) {
-			for (auto &y : x) {
-				y.print();
+		printf("Event Counter {\n");
+		for (int i = 0; i < partial_results_.size(); ++i) {
+			printf("\trange [%d, %d) : \n", (1 << i) - 1, (1 << (i + 1)) - 1);
+			for (int j = 0; j < partial_results_[i].size(); ++j) {
+				printf("\t\t%d: ", j);
+				partial_results_[i][j].print();
 			}
-			printf("######\n");
+			printf("\n");
 		}
-		printf("buffer %ld %ld:\n", queue_.start, queue_.end);
+		printf("\tBuffer (start = %ld, end = %ld) :\n", queue_.start, queue_.end);
 		for (int i = 0; i < N; ++i) {
+			printf("\t\t %d: ", i);
 			queue_[i][0].print();
-		} printf("________\n");
+		}
+		printf("}\n");
 	}
 
 private:
 	typedef std::array<Result, KeyCount> Results;
+
 	void updatePeriod(const Results &results, int period);
+
+	static Results newResults(Key key, Value value) {
+		Results new_results = {};
+		new_results[key] = {Result(value)};
+		return new_results;
+	}
 
 	unsigned int highest_timestamp_;
 	cbuf<Results, N+1> queue_;
