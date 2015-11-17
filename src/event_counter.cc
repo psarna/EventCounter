@@ -1,6 +1,5 @@
 #include "event_counter.h"
 
-#include <cmath>
 #include <cstdio>
 
 template<int N, int KeyCount, typename Key, typename Value>
@@ -38,6 +37,13 @@ void EventCounter<N, KeyCount, Key, Value>::Result::remove(const Result &other) 
 	print();
 }
 
+template<int N, int KeyCount, typename Key, typename Value>
+void EventCounter<N, KeyCount, Key, Value>::addToPeriod(const Key &key, const Result &result, int period) {
+	printf("Adding a result to period %d:\n", period);
+	Results &curr_results = partial_results_[period];
+
+	curr_results[key].add(result);
+}
 
 template<int N, int KeyCount, typename Key, typename Value>
 void EventCounter<N, KeyCount, Key, Value>::updatePeriod(const Results &results, int period) {
@@ -46,55 +52,58 @@ void EventCounter<N, KeyCount, Key, Value>::updatePeriod(const Results &results,
 		result.print();
 	}
 
-	// Edge case 1: Adding to first partial result
-	if (period == 0) {
-		Results &curr_results = partial_results_[0];
-
-		for (int i = 0; i < results.size(); ++i) {
-			const Result &result = results[i];
-			curr_results[i].add(result);
-		}
-		return;
-	}
-
-	// Edge case 1: Removing from last partial result
-	if (period == log2<N>()) {
-		Results &curr_results = partial_results_[period - 1];
-
-		for (int i = 0; i < results.size(); ++i) {
-			const Result &result = results[i];
-			curr_results[i].remove(result);
-		}
-		return;
-	}
-
-	// Regular case: Removing from previous results,
-	// adding to current results
 	Results &curr_results = partial_results_[period - 1];
 	Results &next_results = partial_results_[period];
 
 	for (int i = 0; i < results.size(); ++i) {
 		const Result &result = results[i];
 		curr_results[i].remove(result);
-		next_results[i].add(result);
+		if (period < log2<N>()) {
+			next_results[i].add(result);
+		}
 	}
 }
 
 template<int N, int KeyCount, typename Key, typename Value>
 void EventCounter<N, KeyCount, Key, Value>::registerEvent(const Key &key, Value value,
 		unsigned int timestamp) {
+
+	// Case 1: Older event is registered
+	if (timestamp <= highest_timestamp_ ) {
+		// Edge case: Event is too old
+		if (highest_timestamp_ - timestamp >= N) {
+			printf("Ignoring old data: %d not in [%d, %d]\n", timestamp, highest_timestamp_ - N + 1, highest_timestamp_);
+			return;
+		}
+		// Regular case: Event is insterted into the structure
+		int queue_index = highest_timestamp_ - timestamp;
+		Result &target = queue_[queue_index][key];
+		target.add(Result(value));
+		// Update period with newly added value
+		addToPeriod(key, Result(value), log2(queue_index + 1));
+
+	}
+
+	// Case 2: Fresh event is registered
 	if (timestamp == highest_timestamp_ + 1) {
+		printf("Registering event: [%ld, %ld]\n", key, value);
 		// Add newly registered event to queue
 		queue_.put(EventCounter::newResults(key, value));
+		// Update partial results for first period
+		addToPeriod(key, Result(value), 0);
 		// Update partial results for all periods
-		for (int period = 0; period < log2<N>(); period++) {
+		for (int period = 1; period <= log2<N>(); period++) {
+			printf("Updating for queue element %d\n", (1 << period) - 1);
 			Results &results = queue_[(1 << period) - 1];
 			updatePeriod(results, period);
 		}
-		// Remove the oldest record from the queue and update partial results
-		Results &last_results = queue_.get();
-		updatePeriod(last_results, log2<N>());
+		// Remove the oldest record from the queue
+		queue_.get();
+
 		highest_timestamp_ = timestamp;
+	}
+	if (timestamp > highest_timestamp_ + 1) {
+		printf("TODO: Implement me\n");
 	}
 }
 
@@ -106,23 +115,15 @@ void EventCounter<N, KeyCount, Key, Value>::query(const Key &key, unsigned int t
 	}
 }
 
-typedef EventCounter<4, 2> Counter;
+typedef EventCounter<8, 2> Counter;
 typedef Counter::Result Result;
 
 int main(void) {
 	Counter ec;
-
-	printf("\n\n=== registerEvent() tests ===\n\n");
-	ec.print();
-	ec.registerEvent(0, 3, 1);
-	ec.print();
-	ec.registerEvent(0, 4, 2);
-	ec.print();
-	ec.registerEvent(0, 5, 3);
-	ec.print();
-	ec.registerEvent(0, 6, 4);
-	ec.print();
-	ec.registerEvent(0, 7, 5);
+	printf("\n\n=== registerEvent() tests for new events ===\n\n");
+	for (int i = 0; i < 102; ++i) {
+		ec.registerEvent(0, i + 3, i + 1);
+	}
 	ec.print();
 
 	printf("\n\n=== query() tests ===\n\n");
@@ -138,4 +139,15 @@ int main(void) {
 
 	printf("Query result: ");
 	res2.print();
+
+	printf("\n\n=== registerEvent() tests for old events ===\n\n");
+	ec.print();
+	ec.registerEvent(0, 5, 5);
+	ec.registerEvent(0, 1000, 99);
+	ec.print();
+
+	Result res3;
+	ec.query(0, 3, res3);
+	printf("Query result: ");
+	res3.print();
 }

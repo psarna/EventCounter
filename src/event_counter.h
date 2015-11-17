@@ -44,9 +44,9 @@ public:
 	void getTopKeys(std::vector<std::pair<Key, Result>> &results,
 			unsigned int time_period, int n);
 
-	void print() const {
-		printf("Event Counter {\n");
-		for (int i = 0; i < partial_results_.size(); ++i) {
+	void print(size_t max_len = 4) const {
+		printf("Event Counter (highest timestamp = %d) {\n", highest_timestamp_);
+		for (int i = 0; i < std::min(max_len, partial_results_.size()); ++i) {
 			printf("\trange [%d, %d) : \n", (1 << i) - 1, (1 << (i + 1)) - 1);
 			for (int j = 0; j < partial_results_[i].size(); ++j) {
 				printf("\t\t%d: ", j);
@@ -66,6 +66,8 @@ private:
 	typedef std::array<Result, KeyCount> Results;
 
 	void updatePeriod(const Results &results, int period);
+	void addToPeriod(const Key &key, const Result &result, int period);
+	void removeFromPeriod(const Key &key, const Result &result, int period);
 
 	static Results newResults(Key key, Value value) {
 		Results new_results = {};
@@ -75,7 +77,7 @@ private:
 
 	unsigned int highest_timestamp_;
 	cbuf<Results, N+1> queue_;
-	std::array<Results, sizeof(N)> partial_results_;
+	std::array<Results, 8 * sizeof(N)> partial_results_;
 };
 
 #endif
