@@ -1,3 +1,6 @@
+#ifndef __FIXED_MAP_H
+#define __FIXED_MAP_H
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -196,3 +199,5 @@ private:
 	History_buffer<Key, N> hist_;
 	std::array<KeyValue, N> data_;
 };
+
+#endif
