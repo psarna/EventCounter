@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cstdio>
 
+#include "immortal_container.h"
+
 template<typename Value = int, int N = 5> 
 class History_buffer {
 public:
@@ -104,6 +106,9 @@ private:
 template<typename Key = char, typename Value = int, int N = 2>
 class Fixed_map {
 public:
+	typedef Key key_type;
+	typedef Value value_type;
+
 	Fixed_map() : hist_(), data_() {
 		/* add elem for every Value */
 		for (Value i = 0; i < N; i++) {
@@ -112,7 +117,7 @@ public:
 	};
 	
 	/* log(number of keys) */
-	Value get(Key key) {
+	Value get(const Key &key) {
 		const auto& it = std::lower_bound(data_.begin(),
 				data_.end(), key);
 		if (it == data_.end() || it->key != key) {
@@ -124,11 +129,11 @@ public:
 	};
 
 	/* linear by the number of keys */
-	void put(Key key) {
+	void put(const Key &key) {
 		/* TODO(jotek): Optimize shifts (unnecessary right and left ones)
 		/* first: ignore existing keys */
 		auto it0 = std::lower_bound(data_.begin(), data_.end(), key);
-		if (it0 != data_.end() && (*it0).key == key) {
+		if (it0 != data_.end() && it0->key == key) {
 			return;
 		}
 
@@ -139,7 +144,7 @@ public:
 					return el.value == last;
 				});
 		assert(it != data_.rend());
-		assert((*it).value == last);
+		assert(it->value == last);
 		/* shift elements to the right removing old key */
 		for (auto prev = it + 1; prev != data_.rend(); it++, prev++) {
 			(*it) = (*prev);
@@ -149,7 +154,7 @@ public:
 		   space is in the place for new key. */
 		auto it2 = data_.begin();
 		auto next = it2 + 1;
-		for(; (*next).key < key && next != data_.end(); it2++, next++) {
+		for(; next->key < key && next != data_.end(); it2++, next++) {
 			(*it2) = (*next);
 		}
 		/* Now insert new key into the space */
@@ -202,6 +207,16 @@ int main() {
 		map.put(i);
 		printf("m[%c]=%d\n", i, map.get(i));
 		map.print();
+		printf("############################\n");
+	}
+
+	Immortal<Fixed_map<>> immortal_map;
+	for (auto i : {'0', '1', '3', '2', '1', '2', '3', '9'} ) {
+		printf("m[%c]=%d\n", i, map.get(i));
+		immortal_map.print();
+		immortal_map.put(i);
+		printf("m[%c]=%d\n", i, map.get(i));
+		immortal_map.print();
 		printf("############################\n");
 	}
 }
