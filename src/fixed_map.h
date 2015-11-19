@@ -3,8 +3,7 @@
 #include <cassert>
 #include <cstdio>
 
-typedef int Value;
-template<int N = 5> 
+template<typename Value = int, int N = 5> 
 class History_buffer {
 public:
 
@@ -103,9 +102,12 @@ private:
 };
 
 
-template<typename Key = char, int N = 2>
+template<typename Key = char, typename Value = int, int N = 2>
 class Fixed_map {
 public:
+	typedef Key key_type;
+	typedef Value value_type;
+
 	Fixed_map() : hist_(), data_() {
 		/* initialize values for elements */
 		for (Value i = 0; i < N; i++) {
@@ -191,6 +193,6 @@ private:
 		};
 	};
 
-	History_buffer<N> hist_;
+	History_buffer<Key, N> hist_;
 	std::array<KeyValue, N> data_;
 };
