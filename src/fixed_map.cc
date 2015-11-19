@@ -89,7 +89,7 @@ private:
 		int prev;
 		int next;
 		
-		Element() {
+		Element() { // TODO(jotek): move prev, next to default values
 			prev = -1;
 			next = -1;
 		}
@@ -125,6 +125,7 @@ public:
 
 	/* linear by the number of keys */
 	void put(Key key) {
+		/* TODO(jotek): Optimize shifts (unnecessary right and left ones)
 		/* first: ignore existing keys */
 		auto it0 = std::lower_bound(data_.begin(), data_.end(), key);
 		if (it0 != data_.end() && (*it0).key == key) {
