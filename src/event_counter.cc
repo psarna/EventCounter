@@ -1,5 +1,7 @@
 #include "event_counter.h"
 
+#include "mutex.h"
+
 #include <cstdio>
 
 template<int N, int KeyCount, typename KeyRepresentation, typename Key, typename Value>
@@ -213,9 +215,15 @@ int main(void) {
 	std::array<char, 16> key1 = {'a', 'b', 'c'};
 	std::array<char, 16> key0 = {'a', 'b', 'd'};
 	std::array<char, 16> key00 = {'a', 'b', 'a'};
+
 	ec.registerEvent(key1, 4321, 106);
 	ec.registerEvent(key0, 1234, 107);
 	ec.registerEvent(key1, 9876, 106);
+
+	Mutex mutex;
+	mutex.lock();
 	ec.registerEvent(key00, 5555, 108);
 	ec.print();
+	mutex.unlock();
+
 }
