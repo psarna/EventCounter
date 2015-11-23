@@ -67,6 +67,18 @@ void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::updatePeriod(
 }
 
 template<int N, int KeyCount, typename KeyRepresentation, typename Key, typename Value>
+void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::invalidateKey(const Key key) {
+	// remove from queue
+	for (int i = queue_.start; i != queue_.end; i = (i + 1) % queue_.size) {
+		queue_[i][key] = Result();
+	}
+	// remove from partial_results
+	for (auto &partial : partial_results_) {
+		partial[key] = Result();
+	}
+}
+
+template<int N, int KeyCount, typename KeyRepresentation, typename Key, typename Value>
 void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::registerEvent(
 		const KeyRepresentation &key_repr, Value value, unsigned int timestamp) {
 	Key key = key_map_.get(key_repr);
@@ -74,7 +86,7 @@ void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::registerEvent(
 		key = key_map_.put(key_repr);
 		printf("Key is %ld\n", key);
 		// first - invalidate old entries.
-		// TODO:
+		invalidateKey(key);
 	}
 	registerEvent(key, value, timestamp);
 }

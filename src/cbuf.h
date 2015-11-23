@@ -8,6 +8,7 @@
 template<typename T, long Size>
 struct cbuf {
 	std::array<T, Size> data;
+	static const long size = Size;
 	long start;
 	long end;
 

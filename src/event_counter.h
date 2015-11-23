@@ -75,6 +75,7 @@ private:
 	void updatePeriod(const Results &results, int period);
 	void addToPeriod(const Key &key, const Result &result, int period);
 	void removeFromPeriod(const Key &key, const Result &result, int period);
+	void invalidateKey(const Key key);
 
 	static Results newResults(Key key, Value value) {
 		Results new_results = {};
