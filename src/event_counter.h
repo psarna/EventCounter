@@ -7,9 +7,11 @@
 #include <vector>
 
 #include "cbuf.h"
+#include "fixed_map.h"
 #include "log2.h"
 
-template<int N, int KeyCount, typename Key = long, typename Value = long>
+template<int N, int KeyCount, typename KeyRepresentation = std::array<char, 16>,
+		typename Key = long, typename Value = long>
 class EventCounter {
 public:
 	struct Result {
@@ -38,6 +40,11 @@ public:
 
 	EventCounter() : queue_(N), partial_results_(), highest_timestamp_() {
 	}
+
+	void registerEvent(const KeyRepresentation &key, Value value, unsigned int timestamp);
+	void query(const KeyRepresentation &key, unsigned int time_period, Result &result);
+	void getTopKeys(std::vector<std::pair<KeyRepresentation, Result>> &results,
+			unsigned int time_period, int n);
 
 	void registerEvent(const Key &key, Value value, unsigned int timestamp);
 	void query(const Key &key, unsigned int time_period, Result &result);
@@ -78,6 +85,7 @@ private:
 	unsigned int highest_timestamp_;
 	cbuf<Results, N+1> queue_;
 	std::array<Results, 8 * sizeof(N)> partial_results_;
+	fixed_map<KeyRepresentation, Key, KeyCount> key_map_;
 };
 
 #endif

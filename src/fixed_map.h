@@ -1,5 +1,5 @@
-#ifndef __FIXED_MAP_H
-#define __FIXED_MAP_H
+#ifndef __fixed_map_H
+#define __fixed_map_H
 
 #include <algorithm>
 #include <array>
@@ -7,10 +7,10 @@
 #include <cstdio>
 
 template<typename Value = int, int N = 5> 
-class History_buffer {
+class lru_buffer {
 public:
 
-	History_buffer() : first_(0), last_(N - 1) {
+	lru_buffer() : first_(0), last_(N - 1) {
 		/* initialize full */
 		for (int i = 0; i < N; i++) {
 			int prev = i - 1;
@@ -106,12 +106,12 @@ private:
 
 
 template<typename Key = char, typename Value = int, int N = 2>
-class Fixed_map {
+class fixed_map {
 public:
 	typedef Key key_type;
 	typedef Value value_type;
 
-	Fixed_map() : hist_(), data_() {
+	fixed_map() : hist_(), data_() {
 		/* initialize values for elements */
 		for (Value i = 0; i < N; i++) {
 			data_[i].value = i;
@@ -131,11 +131,11 @@ public:
 	};
 
 	/* linear by the number of keys */
-	void put(Key key) {
+	Value put(Key key) {
 		/* first: ignore existing keys */
 		auto it0 = std::lower_bound(data_.begin(), data_.end(), key);
-		if (it0 != data_.end() && (*it0).key == key) {
-			return;
+		if (it0 != data_.end() && it0->key == key) {
+			return it0->value;
 		}
 
 		int last_value = hist_.tail();
@@ -159,13 +159,14 @@ public:
 		// 4. insert new
 		(*it_insert) = KeyValue(key, last_value);
 		hist_.insert(last_value);
+		return last_value;
 	};
 
 	void print() const {
 		printf("fixed_map {\n");
 		for (const auto& el : data_) {
 			Key key = el.key;
-			if (key == std::numeric_limits<Key>::max()) {
+			if (key[15] == std::numeric_limits<Key>::max()) {
 				key = '#';
 			}
 			printf("\t[%c,%d]", key, el.value);
@@ -180,9 +181,14 @@ private:
 		Key key;
 		Value value;
 		
+		KeyValue() : key{}, value(-1) {
+			for (auto &c : key) {
+				c = std::numeric_limits<char>::max();
+			}
+		}
+
 		/* construct as the highest possible Key value */
-		KeyValue(Key key = std::numeric_limits<Key>::max(),
-				Value value = -1)
+		KeyValue(Key key, Value value)
 			: key(key),
 			  value(value) {
 		};
@@ -196,7 +202,7 @@ private:
 		};
 	};
 
-	History_buffer<Key, N> hist_;
+	lru_buffer<Value, N> hist_;
 	std::array<KeyValue, N> data_;
 };
 
