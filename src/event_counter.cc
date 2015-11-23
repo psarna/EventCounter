@@ -85,7 +85,22 @@ void EventCounter<N, KeyCount, Key, Value>::registerEvent(const Key &key, Value 
 	}
 
 	// Case 2: Fresh event is registered
-	if (timestamp == highest_timestamp_ + 1) {
+	if (timestamp > highest_timestamp_) {
+		printf("Registering event: [%ld, %ld]\n", key, value);
+		while (timestamp > highest_timestamp_ + 1) {
+			highest_timestamp_++;
+			// Add empty event to queue
+			queue_.put(EventCounter::Results{});
+			// Update partial results for all periods
+			for (int period = 1; period <= log2<N>(); period++) {
+				printf("Updating for queue element %d\n", (1 << period) - 1);
+				Results &results = queue_[(1 << period) - 1];
+				updatePeriod(results, period);
+			}
+			// Remove the oldest record from the queue
+			queue_.get();
+		}
+		assert(timestamp == highest_timestamp_ + 1);
 		printf("Registering event: [%ld, %ld]\n", key, value);
 		// Add newly registered event to queue
 		queue_.put(EventCounter::newResults(key, value));
@@ -101,9 +116,6 @@ void EventCounter<N, KeyCount, Key, Value>::registerEvent(const Key &key, Value 
 		queue_.get();
 
 		highest_timestamp_ = timestamp;
-	}
-	if (timestamp > highest_timestamp_ + 1) {
-		printf("TODO: Implement me\n");
 	}
 }
 
@@ -150,4 +162,12 @@ int main(void) {
 	ec.query(0, 3, res3);
 	printf("Query result: ");
 	res3.print();
+
+	ec.registerEvent(0, 20000, 105);
+	ec.print();
+
+	Result res4;
+	ec.query(0, 3, res4);
+	printf("Query result: ");
+	res4.print();
 }
