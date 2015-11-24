@@ -33,13 +33,15 @@ public:
 		return data_.get(key);
 	}
 
-	void put(const key_type &key) {
+	value_type put(const key_type &key) {
+		value_type ret;
 		repair();
 		status_.store(kDataDirty);
-		data_.put(key);
+		ret = data_.put(key);
 		status_.store(kBackupDirty);
 		backup_.put(key);
 		status_.store(kOk);
+		return ret;
 	}
 
 	void print() {

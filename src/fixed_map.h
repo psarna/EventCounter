@@ -139,7 +139,6 @@ public:
 		}
 
 		int last_value = hist_.tail();
-		printf("last_value[%d]\n", last_value);
 		// 1. get iterator to remove
 		auto it_remove = std::find_if(data_.begin(), data_.end(),
 				[last_value](const KeyValue& el) {

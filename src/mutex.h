@@ -8,7 +8,6 @@ class Mutex {
 public:
 	Mutex() {
 		int ret = -1;
-		printf("thread safety for the win!\n");
 
 		pthread_mutexattr_t mutex_attr;
 
@@ -34,7 +33,6 @@ public:
 		if ((ret = pthread_mutex_destroy(&mutex_)) != 0) {
 			fprintf(stderr, "destroy failed\n");
 		}
-		printf("mutex destroyed\n");
 	}
 
 	void lock() {
@@ -50,7 +48,6 @@ public:
 			if (ret != 0)
 				fprintf(stderr, "lock failed\n");
 		}
-		printf("mutex locked\n");
 	}
 
 	bool trylock() {
@@ -76,7 +73,6 @@ public:
 		if ((ret = pthread_mutex_unlock(&mutex_)) != 0) {
 			fprintf(stderr, "unlock failed\n");
 		}
-		printf("mutex unlocked\n");
 	}
 
 private:
