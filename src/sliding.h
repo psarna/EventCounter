@@ -28,28 +28,14 @@ public:
 			head_ = index;
 			nodes_[head_].value = value;
 			nodes_[head_].next = kNull;
+			nodes_[head_].prev = kNull;
 			tail_ = index;
 		} else {
 			nodes_[index].value = value;
 			nodes_[index].next = head_;
+			nodes_[index].prev = kNull;
+			nodes_[head_].prev = index;
 			head_ = index;
-		}
-		size_++;
-	}
-
-	void push_back(const Value &value) {
-		int index = get_free();
-
-		if (size_ == 0) {
-			head_ = index;
-			nodes_[head_].value = value;
-			nodes_[head_].next = kNull;
-			tail_ = index;
-		} else {
-			nodes_[index].value = value;
-			nodes_[tail_].next = index;
-			tail_ = index;
-			nodes_[tail_].next = kNull;
 		}
 		size_++;
 	}
@@ -60,11 +46,34 @@ public:
 			add_free(head_);
 			head_ = kNull;
 		} else {
-			int prev_head = nodes_[head_].next;
+			int new_head = nodes_[head_].next;
 			add_free(head_);
-			head_ = prev_head;
-			
+			head_ = new_head;
+			nodes_[head_].prev = kNull;
 		}
+		size_--;
+	}
+
+	void erase(int index) {
+		assert(index != kNull);
+
+		if (index == free_head_ || index == free_tail_) {
+			return;
+		}
+
+		int prev_node = nodes_[index].prev;
+		int next_node = nodes_[index].next;
+		if (prev_node == kNull) {
+			head_ = next_node;
+		} else {
+			nodes_[prev_node].next = next_node;
+		}
+		if (next_node == kNull) {
+			tail_ = prev_node;
+		} else {
+			nodes_[next_node].prev = prev_node;
+		}
+		add_free(index);
 		size_--;
 	}
 
@@ -72,40 +81,6 @@ public:
 		while (size_ > 0 && Comp()(front(), value)) {
 			pop_front();
 		}
-	}
-
-	void insert_sorted(const Value &value) {
-		int last = kNull;
-		int current = head_;
-
-		if (size_ == 0) {
-			return push_front(value);
-		}
-
-		while (current != kNull && Comp()(nodes_[current].value, value)) {
-			last = current;
-			current = nodes_[current].next;
-		}
-
-		int index = get_free();
-		nodes_[index].value = value;
-
-		// Inserting to the back
-		if (current == kNull) {
-			tail_ = index;
-			nodes_[index].next = kNull;
-			nodes_[last].next = index;
-		} else {
-			nodes_[index].next = current;
-			// Inserting to the front
-			if (last == kNull) {
-				head_ = index;
-			// Inserting in the middle
-			} else {
-				nodes_[last].next = index;
-			}
-		}
-		size_++;
 	}
 
 	const Value &front() const {
@@ -132,12 +107,24 @@ private:
 	inline int get_free() {
 		assert(free_head_ != kNull);
 		int index = free_head_;
-		free_head_ = nodes_[free_head_].next;	
+		free_head_ = nodes_[free_head_].next;
+
+		if (free_head_ == kNull) {
+			free_tail_ = kNull;
+		}
+
 		return index;
 	}
 
 	inline void add_free(int index) {
 		nodes_[index].next = free_head_;
+		nodes_[index].prev = kNull;
+
+		if (free_head_ == kNull) {
+			free_tail_ = index;
+		} else {
+			nodes_[free_head_].prev = index;
+		}
 		free_head_ = index;	
 	}
 
@@ -148,6 +135,7 @@ private:
 	int head_;
 	int tail_;
 	int free_head_;
+	int free_tail_;
 };
 
 template<typename Value, int N, typename Comp>

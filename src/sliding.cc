@@ -18,5 +18,4 @@ int main() {
 		smin.update(i);
 		smin.print();
 	}
-
 }
