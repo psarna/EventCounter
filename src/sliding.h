@@ -179,9 +179,6 @@ public:
 private:
 	void remove(const Value &value) {
 		data_.pop_until(value);
-		while (data_.size() > 0 && data_.front() == value) {
-			data_.pop_front();
-		}
 	}
 
 	static_list<Value, N, Comp> data_;
