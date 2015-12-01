@@ -8,20 +8,29 @@ template<typename Value, int N, typename Comp = std::less<Value>>
 class static_list {
 public:
 	struct node {
-		node() : value(), next(kNull) {}
-
 		Value value;
 		int prev;
 		int next;
+		int counter;
 	};
 
-	static_list() : nodes_(), size_(0), head_(0), free_head_(0) {
+	struct pointer {
+		int index;
+		int counter;
+	};
+
+
+	static_list()
+	: nodes_(), size_(0), head_(kNull), free_head_(0), free_tail_(N-1) {
 		for (int i = 0; i < N; ++i) {
 			nodes_[i].next = i + 1;
+			nodes_[i].prev = i - 1;
+			nodes_[i].counter = 0;
 		}
+		nodes_[0].prev = kNull;
 	}
 
-	void push_front(const Value &value) {
+	pointer push_front(const Value &value) {
 		int index = get_free();
 
 		if (size_ == 0) {
@@ -38,6 +47,8 @@ public:
 			head_ = index;
 		}
 		size_++;
+
+		return {index, nodes_[index].counter};
 	}
 
 	void pop_front() {
@@ -54,13 +65,15 @@ public:
 		size_--;
 	}
 
-	void erase(int index) {
+	void erase(pointer ptr) {
+		int index = ptr.index;
 		assert(index != kNull);
 
-		if (index == free_head_ || index == free_tail_) {
+		if (ptr.counter != nodes_[index].counter) {
 			return;
 		}
 
+		printf("erasing %d\n", index);
 		int prev_node = nodes_[index].prev;
 		int next_node = nodes_[index].next;
 		if (prev_node == kNull) {
@@ -117,6 +130,7 @@ private:
 	}
 
 	inline void add_free(int index) {
+		nodes_[index].counter++;
 		nodes_[index].next = free_head_;
 		nodes_[index].prev = kNull;
 
@@ -141,15 +155,20 @@ private:
 template<typename Value, int N, typename Comp>
 class Sliding {
 public:
+	typedef typename static_list<Value, N, Comp>::pointer pointer;
 
 	Value top() const {
 		assert(data_.size() > 0);
 		return data_.back();
 	}
 
-	void update(const Value &value) {
+	pointer update(const Value &value) {
 		remove(value);
 		return data_.push_front(value);
+	}
+
+	void erase(pointer ptr) {
+		return data_.erase(ptr);
 	}
 
 	void print() const {

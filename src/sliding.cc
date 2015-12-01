@@ -18,4 +18,17 @@ int main() {
 		smin.update(i);
 		smin.print();
 	}
+	auto x = smin.update(4);
+	smin.update(6);
+	auto y = smin.update(9);
+	smin.print();
+	smin.erase(x);
+	smin.print();
+	auto z = smin.update(7);
+	printf("x = %d, y = %d, z = %d\n", x, y, z);
+	smin.print();
+	smin.erase(y);
+	smin.print();
+	smin.erase(z);
+	smin.print();
 }
