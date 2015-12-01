@@ -12,6 +12,7 @@
 #include "immortal_container.h"
 #include "log2.h"
 #include "mutex.h"
+#include "sliding.h"
 
 template<int N, int KeyCount, typename KeyRepresentation = std::array<char, 16>,
 		typename Key = long, typename Value = long>
@@ -34,10 +35,52 @@ public:
 		void remove(const Result& result);
 		void print() const {
 			printf("(%s, %s, %ld, %ld)\n",
-					min == std::numeric_limits<Value>::max() ? "X" : std::to_string(min).c_str(),
-					max == std::numeric_limits<Value>::min() ? "X" : std::to_string(max).c_str(),
-					total,
-					count);
+				min == std::numeric_limits<Value>::max() ? "X" : std::to_string(min).c_str(),
+				max == std::numeric_limits<Value>::min() ? "X" : std::to_string(max).c_str(),
+				total,
+				count);
+		}
+	};
+
+	struct PartialResult : public Result {
+		typedef Sliding<Value, N/2, std::less<Value>> SlidingMax;
+		typedef Sliding<Value, N/2, std::greater<Value>> SlidingMin;
+
+		SlidingMin partial_min;
+		cbuf<typename SlidingMin::pointer, N+1> min_pointers;
+		SlidingMax partial_max;
+		cbuf<typename SlidingMax::pointer, N+1> max_pointers;
+
+		PartialResult(Value value) : Result(value) {
+		}
+
+		PartialResult() : Result() {
+		}
+
+		Value min() {
+			return partial_min.top();
+		}
+
+		Value max() {
+			return partial_max.top();
+		}
+
+		void add(const Result &result) {
+			auto min_ptr = partial_min.update(result.min);
+			min_pointers.put(min_ptr);
+			auto max_ptr = partial_max.update(result.max);
+			max_pointers.put(max_ptr);
+			this->total += result.total;
+			this->count += result.count;
+		}
+
+		void remove(const Result &result) {
+			auto min_ptr = min_pointers.get();
+			partial_min.erase(min_ptr);
+			auto max_ptr = max_pointers.get();
+			partial_max.erase(max_ptr);
+			this->total -= result.total;
+			this->count -= result.count;
 		}
 	};
 
@@ -73,22 +116,23 @@ public:
 	}
 
 private:
+	typedef std::array<PartialResult, KeyCount> PartialResults;
 	typedef std::array<Result, KeyCount> Results;
 
-	void updatePeriod(const Results &results, int period);
+	void updatePeriod(const PartialResults &results, int period);
 	void addToPeriod(const Key &key, const Result &result, int period);
 	void removeFromPeriod(const Key &key, const Result &result, int period);
 	void invalidateKey(const Key key);
 
-	static Results newResults(Key key, Value value) {
-		Results new_results = {};
-		new_results[key] = {Result(value)};
+	static PartialResults newResults(Key key, Value value) {
+		PartialResults new_results = {};
+		new_results[key] = {PartialResult(value)};
 		return new_results;
 	}
 
 	unsigned int highest_timestamp_;
 	cbuf<Results, N+1> queue_;
-	std::array<Results, 8 * sizeof(N)> partial_results_;
+	std::array<PartialResults, 8 * sizeof(N)> partial_results_;
 	Immortal<fixed_map<KeyRepresentation, Key, KeyCount>> key_map_;
 	Mutex mutex_;
 };
@@ -119,16 +163,16 @@ void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::Result::remove(co
 template<int N, int KeyCount, typename KeyRepresentation, typename Key, typename Value>
 void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::addToPeriod(
 		const Key &key, const Result &result, int period) {
-	Results &curr_results = partial_results_[period];
+	PartialResults &curr_results = partial_results_[period];
 
 	curr_results[key].add(result);
 }
 
 template<int N, int KeyCount, typename KeyRepresentation, typename Key, typename Value>
 void EventCounter<N, KeyCount, KeyRepresentation, Key, Value>::updatePeriod(
-		const Results &results, int period) {
-	Results &curr_results = partial_results_[period - 1];
-	Results &next_results = partial_results_[period];
+		const PartialResults &results, int period) {
+	PartialResults &curr_results = partial_results_[period - 1];
+	PartialResults &next_results = partial_results_[period];
 
 	for (int i = 0; i < results.size(); ++i) {
 		const Result &result = results[i];
