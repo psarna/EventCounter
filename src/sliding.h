@@ -69,7 +69,7 @@ public:
 	}
 
 	void pop_until(const Value &value) {
-		while (Comp()(front(), value)) {
+		while (size_ > 0 && Comp()(front(), value)) {
 			pop_front();
 		}
 	}
@@ -154,28 +154,29 @@ template<typename Value, int N, typename Comp>
 class Sliding {
 public:
 
-	Value max() const {
+	Value top() const {
 		assert(data_.size() > 0);
 		return data_.back();
 	}
 
 	void update(const Value &value) {
-		return data_.push_back(value);
-	}
-
-	void remove(const Value &value) {
-		data_.pop_until(value);
-		while (data_.front() == value) {
-			data_.pop_front();
-		}
+		remove(value);
+		return data_.push_front(value);
 	}
 
 	void print() const {
 		data_.print();
-		printf("Top = %d\n", this->max());
+		printf("Top = %d\n", this->top());
 	}
 
 private:
+	void remove(const Value &value) {
+		data_.pop_until(value);
+		while (data_.size() > 0 && data_.front() == value) {
+			data_.pop_front();
+		}
+	}
+
 	static_list<Value, N, Comp> data_;
 };
 
