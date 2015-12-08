@@ -38,19 +38,6 @@ public:
 			this->count += other.count;
 		}
 
-
-		void remove(const Result& other) {
-			/* TODO: fixme
-			if (other.min == this->min) {
-				this->min = 0;
-			}
-			if (other.max == this->max) {
-				this->max = 0;
-			}*/
-			this->total -= other.total;
-			this->count -= other.count;
-		}
-
 		void print() const {
 			printf("(%s, %s, %ld, %ld)\n",
 				min == std::numeric_limits<Value>::max() ? "X" : std::to_string(min).c_str(),
@@ -61,12 +48,12 @@ public:
 	};
 
 	struct AccumulatedResult : public Result {
-		typedef Sliding<Value, N/2, std::less<Value>> SlidingMax;
-		typedef Sliding<Value, N/2, std::greater<Value>> SlidingMin;
+		typedef Sliding<Value, N, std::less<Value>, std::numeric_limits<Value>::min()> SlidingMax;
+		typedef Sliding<Value, N, std::greater<Value>, std::numeric_limits<Value>::max()> SlidingMin;
 
-		SlidingMin accumulated_min;
+		Immortal<SlidingMin> accumulated_min;
 		cbuf<typename SlidingMin::pointer, N+1> min_pointers;
-		SlidingMax accumulated_max;
+		Immortal<SlidingMax> accumulated_max;
 		cbuf<typename SlidingMax::pointer, N+1> max_pointers;
 
 		AccumulatedResult(Value value) : Result(value) {
@@ -83,23 +70,57 @@ public:
 			return accumulated_max.top();
 		}
 
-		/*void add(const Result &result) {
-			auto min_ptr = accumulated_min.update(result.min);
-			min_pointers.put(min_ptr);
-			auto max_ptr = accumulated_max.update(result.max);
-			max_pointers.put(max_ptr);
+		void add(AccumulatedResult &result) {
+			if (!min_pointers.full()) {
+				auto min_ptr = accumulated_min.update(result.min());
+				min_pointers.put(min_ptr);
+			}
+			if (!max_pointers.full()) {
+				auto max_ptr = accumulated_max.update(result.max());
+				max_pointers.put(max_ptr);
+			}
+			this->total += result.total;
+			this->count += result.count;
+		}
+
+		void remove(const AccumulatedResult &result) {
+			if (!min_pointers.empty()) {
+				auto min_ptr = min_pointers.get();
+				accumulated_min.erase(min_ptr);
+			}
+			if (!max_pointers.empty()) {
+				auto max_ptr = max_pointers.get();
+				accumulated_max.erase(max_ptr);
+			}
+			this->total -= result.total;
+			this->count -= result.count;
+		}
+
+		void add(const Result &result) {
+			if (!min_pointers.full()) {
+				auto min_ptr = accumulated_min.update(result.min);
+				min_pointers.put(min_ptr);
+			}
+			if (!max_pointers.full()) {
+				auto max_ptr = accumulated_max.update(result.max);
+				max_pointers.put(max_ptr);
+			}
 			this->total += result.total;
 			this->count += result.count;
 		}
 
 		void remove(const Result &result) {
-			auto min_ptr = min_pointers.get();
-			accumulated_min.erase(min_ptr);
-			auto max_ptr = max_pointers.get();
-			accumulated_max.erase(max_ptr);
+			if (!min_pointers.empty()) {
+				auto min_ptr = min_pointers.get();
+				accumulated_min.erase(min_ptr);
+			}
+			if (!max_pointers.empty()) {
+				auto max_ptr = max_pointers.get();
+				accumulated_max.erase(max_ptr);
+			}
 			this->total -= result.total;
 			this->count -= result.count;
-		}*/
+		}
 	};
 
 	EventCounter() : queue_(N), accumulated_results_(), highest_timestamp_() {
@@ -178,10 +199,15 @@ public:
 	}
 
 	void query(const Key &key, unsigned int time_period, Result &result) {
+		AccumulatedResult ret;
 		for (int i = time_period - 1; i >= 0; --i) {
 			AccumulatedResults &results = accumulated_results_[i];
-			result.add(results[key]);
+			ret.add(results[key]);
 		}
+		result.min = ret.min();
+		result.max = ret.max();
+		result.total = ret.total;
+		result.count = ret.count;
 	}
 
 	void getTopKeys(std::vector<std::pair<Key, Result>> &results,

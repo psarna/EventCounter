@@ -110,6 +110,7 @@ class fixed_map {
 public:
 	typedef Key key_type;
 	typedef Value value_type;
+	typedef int pointer;
 
 	fixed_map() : hist_(), data_() {
 		/* initialize values for elements */

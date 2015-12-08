@@ -18,6 +18,7 @@ public:
 	typedef Container container_type;
 	typedef typename container_type::key_type key_type;
 	typedef typename container_type::value_type value_type;
+	typedef typename container_type::pointer pointer;
 
 	enum status {
 		kOk,          // data: consitent;   backup: consistent
@@ -26,6 +27,18 @@ public:
 	};
 
 	Immortal() : data_(), backup_(), status_(kOk) {
+	}
+
+	Immortal(Immortal &&other)
+	:	data_(std::move(other.data_)),
+		backup_(std::move(other.backup_)),
+		status_(other.status_)
+	{}
+
+	Immortal &operator=(Immortal &&other) {
+		data_ = std::move(other.data_);
+		backup_ = std::move(other.backup_);
+		status_.store(other.status_);
 	}
 
 	value_type get(const key_type &key) {
@@ -66,6 +79,30 @@ public:
 			break;
 		}
 		assert(status_.load() == kOk);
+	}
+
+	value_type top() {
+		repair();
+		return data_.top();
+	}
+
+	pointer update(const value_type &value) {
+		repair();
+		pointer ret;
+		status_.store(kDataDirty);
+		ret = data_.update(value);
+		status_.store(kBackupDirty);
+		backup_.update(value);
+		status_.store(kOk);
+		return ret;
+	}
+
+	void erase(pointer ptr) {
+		status_.store(kDataDirty);
+		data_.erase(ptr);
+		status_.store(kBackupDirty);
+		backup_.erase(ptr);
+		status_.store(kOk);
 	}
 
 private:

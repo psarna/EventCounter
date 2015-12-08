@@ -21,7 +21,7 @@ public:
 
 
 	static_list()
-	: nodes_(), size_(0), head_(kNull), free_head_(0), free_tail_(N-1) {
+	: nodes_(), size_(0), head_(kNull), tail_(kNull), free_head_(0), free_tail_(N-1) {
 		for (int i = 0; i < N; ++i) {
 			nodes_[i].next = i + 1;
 			nodes_[i].prev = i - 1;
@@ -73,7 +73,6 @@ public:
 			return;
 		}
 
-		printf("erasing %d\n", index);
 		int prev_node = nodes_[index].prev;
 		int next_node = nodes_[index].next;
 		if (prev_node == kNull) {
@@ -152,13 +151,17 @@ private:
 	int free_tail_;
 };
 
-template<typename Value, int N, typename Comp>
+template<typename Value, int N, typename Comp, Value DefaultTop = 0>
 class Sliding {
 public:
+	typedef int key_type;
+	typedef Value value_type;
 	typedef typename static_list<Value, N, Comp>::pointer pointer;
 
 	Value top() const {
-		assert(data_.size() > 0);
+		if (data_.size() == 0) {
+			return DefaultTop;
+		}
 		return data_.back();
 	}
 
