@@ -131,6 +131,16 @@ public:
 		return result;
 	};
 
+	/* linear... */
+	Key getKey(const Value& val) {
+		for (auto &el : data_) {
+			if (el.value == val) {
+				return el.key;
+			}
+		}
+		return Key();
+	}
+
 	/* linear by the number of keys */
 	Value put(Key key) {
 		/* first: ignore existing keys */

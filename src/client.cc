@@ -9,6 +9,7 @@
 
 typedef EventCounter<16, 4> Counter;
 typedef Counter::Result Result;
+typedef std::array<char, 16> Key;
 
 Counter *get_counter() {
 	int fd = shm_open("/event_counter", O_RDWR, S_IRUSR | S_IWUSR);
@@ -34,11 +35,18 @@ int main() {
 
 	printf("Sizeof counter is %lu\n", sizeof(Counter));	
 
-	std::array<char, 16> key = {'a', 'b', 'f'};
+
+	std::array<Key, 4> keys;
+	keys[0] = {'a', 'b', 'c'};
+	keys[1] = {'a', 'b', 'd'};
+	keys[2] = {'a', 'b', 'e'};
+	keys[3] = {'a', 'b', 'f'};
+
 	int i = 0;
 	for (;;) {
 		usleep(10000);
 
+		Key key = keys[i%4];
 		ec->registerEvent(key, i, i + 1);
 		ec->registerEvent(key, i , i);
 		ec->registerEvent(key, i, i + 1);
@@ -49,6 +57,18 @@ int main() {
 			ec->print();
 			printf("Query result: ");
 			result.print();
+		}
+		if (i == 133) {
+			std::vector<std::pair<Key, Result>> results;
+			ec->getTopKeys(results, 2, 2);
+			printf("TOP:i = %u\n", i);
+			ec->print();
+			printf("Query result:\n");
+			for (auto &el : results) {
+				printf("\t%s : ", el.first.data());
+				el.second.print();
+			}
+			return 0;
 		}
 		i++;
 	}

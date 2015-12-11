@@ -138,7 +138,16 @@ public:
 	}
 
 	void getTopKeys(std::vector<std::pair<KeyRepresentation, Result>> &results,
-			unsigned int time_period, int n);
+			unsigned int time_period, int n) {
+		std::vector<std::pair<Key, Result>> rets;
+		std::lock_guard<Mutex> lock(mutex_);
+		results.resize(0);
+		getTopKeys(rets, time_period, n);
+		for (auto &pair : rets) {
+			const KeyRepresentation &key_repr = key_map_.getKey(pair.first);
+			results.emplace_back(std::make_pair(key_repr, pair.second));
+		}
+	}
 
 	void registerEvent(const Key &key, Value value, unsigned int timestamp) {
 			// Case 1: Older event is registered
@@ -211,9 +220,49 @@ public:
 	}
 
 	void getTopKeys(std::vector<std::pair<Key, Result>> &results,
-			unsigned int time_period, int n);
+			unsigned int time_period, int n) {
+		// 1. count most used keys
+		std::vector<std::pair<int, Key>> key_counts(KeyCount);
+		for (Key key = 0; key < KeyCount; key++) {
+			key_counts[key] = std::make_pair(0, key);
+		}
+		for (int i = time_period - 1; i >= 0; --i) {
+			AccumulatedResults &accum_results = accumulated_results_[i];
+			for (Key key = 0; key < KeyCount; key++) {
+				key_counts[key].first += accum_results[key].count;
+			}
+		}
+		// 2. get array with n most used keys
+		std::partial_sort(key_counts.begin(), key_counts.begin() + n, key_counts.end(),
+				[](const std::pair<int, Key> &a, const std::pair<int, Key> &b) { return a > b;});
+		key_counts.resize(n);
+		// 3. calculate accumulated results in ret
+		std::vector<AccumulatedResult> ret(n);
+		for (int i = time_period - 1; i >= 0; --i) {
+			AccumulatedResults &accum_results = accumulated_results_[i];
+			for (Key j = 0; j < n; j++) {
+				Key key = key_counts[j].second;
+				ret[j].add(accum_results[key]);
+			}
+		}
+		// 4. save results
+		results.resize(n);
+		for (Key j = 0; j < n; j++) {
+			Key key = key_counts[j].second;
+			Result &result = results[j].second;
+			AccumulatedResult &accum_result = ret[j];
 
-	void print(size_t max_len = 4) const {
+			// first save key
+			results[j].first = key;
+			// then save result
+			result.min = accum_result.min();
+			result.max = accum_result.max();
+			result.total = accum_result.total;
+			result.count = accum_result.count;
+		}
+	}
+
+	void print(size_t max_len = 4) {
 		printf("Event Counter (highest timestamp = %d) {\n", highest_timestamp_);
 		for (int i = 0; i < std::min(max_len, accumulated_results_.size()); ++i) {
 			printf("\trange [%d, %d) : \n", (1 << i) - 1, (1 << (i + 1)) - 1);
@@ -227,6 +276,11 @@ public:
 		for (int i = 0; i < N; ++i) {
 			printf("\t\t%d: ", i);
 			queue_[i][0].print();
+		}
+		printf("\tFixed_map:\n");
+		for (Key i = 0; i < KeyCount; ++i) {
+			KeyRepresentation val = key_map_.getKey(i);
+			printf("\t\tM[%ld] = %s\n", i, val.data());
 		}
 		printf("}\n");
 	}

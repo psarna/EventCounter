@@ -15,10 +15,11 @@ int main() {
 		buf.print();
 	}
 	fixed_map<char, int, 3> map;
-	for (auto i : {'0', '1', '3', '2', '1', '2', '3', '9'} ) {
+	for (auto i : {'a', 'b', 'c', 'b', 'a', 'b', 'c', 'f'} ) {
 		map.print();
 		map.put(i);
 		printf("m[%c]=%d\n", i, map.get(i));
+		printf("m[%d]=%c\n", 2, map.getKey(2));
 		map.print();
 		printf("############################\n");
 	}

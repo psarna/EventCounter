@@ -46,6 +46,11 @@ public:
 		return data_.get(key);
 	}
 
+	key_type getKey(const value_type &val) {
+		repair();
+		return data_.getKey(val);
+	}
+
 	value_type put(const key_type &key) {
 		value_type ret;
 		repair();
