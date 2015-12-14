@@ -14,7 +14,20 @@
 #include "mutex.h"
 #include "sliding.h"
 
-template<int N, int KeyCount, typename KeyRepresentation = std::array<char, 16>,
+#define key_size 16
+typedef std::array<char, key_size> KeyType;
+
+std::string to_string(const KeyType &key){
+	return std::string(key.data(), key.size());
+}
+
+KeyType to_key(const std::string &value) {
+	KeyType ret;
+	strncpy(ret.data(), value.c_str(), ret.size());
+	return ret;
+}
+
+template<int N, int KeyCount, typename KeyRepresentation = KeyType,
 		typename Key = long, typename Value = long>
 class EventCounter {
 public:

@@ -36,17 +36,17 @@ int main() {
 	printf("Sizeof counter is %lu\n", sizeof(Counter));	
 
 
-	std::array<Key, 4> keys;
-	keys[0] = {'a', 'b', 'c'};
-	keys[1] = {'a', 'b', 'd'};
-	keys[2] = {'a', 'b', 'e'};
-	keys[3] = {'a', 'b', 'f'};
+	std::array<std::string, 4> keys;
+	keys[0] = "abc";
+	keys[1] = "abd";
+	keys[2] = "abe";
+	keys[3] = "abf";
 
 	int i = 0;
 	for (;;) {
 		usleep(10000);
 
-		Key key = keys[i%4];
+		Key key = to_key(keys[i%4]);
 		ec->registerEvent(key, i, i + 1);
 		ec->registerEvent(key, i , i);
 		ec->registerEvent(key, i, i + 1);
