@@ -139,6 +139,10 @@ public:
 	EventCounter() : queue_(N), accumulated_results_(), highest_timestamp_() {
 	}
 
+	EventCounter(unsigned int timestamp) : queue_(N), accumulated_results_(),
+		highest_timestamp_(timestamp) {
+	}
+
 	void registerEvent(const KeyRepresentation &key_repr, Value value, unsigned int timestamp) {
 		std::lock_guard<Mutex> lock(mutex_);
 		Key key = key_map_.get(key_repr);

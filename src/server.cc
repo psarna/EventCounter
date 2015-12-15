@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "event_counter.h"
 
@@ -30,7 +31,8 @@ Counter *create_counter() {
 		exit(1);
 	}
 
-	return new(region) Counter;
+	printf("Created counter with timestamp %lu\n", time(NULL));
+	return new(region) Counter(time(NULL));
 }
 
 int main() {

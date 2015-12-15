@@ -38,6 +38,8 @@ int main() {
 
 	int i = 0;
 	for (;;) {
+		unsigned int now = (unsigned int)time(NULL);
+		printf("time = %lu\n", now);
 		Key key1 = to_key(std::to_string(i % 129));
 		Key key2 = to_key(std::to_string(i + 1 % 129));
 		Key key3 = to_key(std::to_string(i + 2 % 129));
@@ -64,16 +66,16 @@ int main() {
 		//	}
 		//}
 		auto start = std::chrono::system_clock::now();
-		for (int j = 0; j < 100000; ++j) {
-			ec->registerEvent(key1, i, i + 1);
-			ec->registerEvent(key2, i , i);
-			ec->registerEvent(key3, i, i + 1);	
-			ec->registerEvent(key1, i, i);	
+		for (int j = 0; j < 25000; ++j) {
+			ec->registerEvent(key1, i+0, now);
+			ec->registerEvent(key2, i+1, now+3);
+			ec->registerEvent(key3, i+2, now-4);	
+			ec->registerEvent(key1, i+3, now+7);	
 		}
 		auto end = std::chrono::system_clock::now();
 		auto diff = end - start;
 		double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
-		printf("%ldms for 400 000 registerEvent\n", (long)elapsed);
+		printf("%ldms for 100 000 registerEvent\n", (long)elapsed);
 		Result result;
 		ec->query(key2, 7, result);
 		printf("  [%d]: ", i);
