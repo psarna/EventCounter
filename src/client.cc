@@ -10,7 +10,7 @@
 
 typedef EventCounter<1024, 32> Counter;
 typedef Counter::Result Result;
-typedef std::array<char, 16> Key;
+typedef std::array<char, 8> Key;
 
 Counter *get_counter() {
 	int fd = shm_open("/event_counter", O_RDWR, S_IRUSR | S_IWUSR);

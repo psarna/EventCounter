@@ -14,7 +14,7 @@
 #include "mutex.h"
 #include "sliding.h"
 
-#define key_size 16
+#define key_size 8
 typedef std::array<char, key_size> KeyType;
 
 std::string to_string(const KeyType &key){

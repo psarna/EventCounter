@@ -37,16 +37,6 @@ int main() {
 	Counter *ec = create_counter();
 
 	printf("Sizeof counter is %lu\n", sizeof(Counter));	
-
-	std::array<char, 16> key3 = {'a', 'b', 'c'};
-	std::array<char, 16> key2 = {'a', 'b', 'd'};
-	std::array<char, 16> key1 = {'a', 'b', 'e'};
-	std::array<char, 16> key0 = {'a', 'b', 'f'};
-
-	ec->registerEvent(key3, 3, 3);
-	ec->registerEvent(key2, 2, 2);
-	ec->registerEvent(key1, 1, 1);
-
 	int i = 0;
 	for (;;) {
 		usleep(1000000);
