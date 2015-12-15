@@ -1,5 +1,6 @@
 #include <array>
 #include <cerrno>
+#include <chrono>
 
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -44,8 +45,6 @@ int main() {
 
 	int i = 0;
 	for (;;) {
-		usleep(10000);
-
 		Key key = to_key(keys[i%4]);
 		ec->registerEvent(key, i, i + 1);
 		ec->registerEvent(key, i , i);
@@ -58,7 +57,7 @@ int main() {
 			printf("Query result: ");
 			result.print();
 		}
-		if (i == 133) {
+		if (i % 133 == 0) {
 			std::vector<std::pair<Key, Result>> results;
 			ec->getTopKeys(results, 2, 2);
 			printf("TOP:i = %u\n", i);
@@ -68,9 +67,19 @@ int main() {
 				printf("\t%s : ", el.first.data());
 				el.second.print();
 			}
-			return 0;
 		}
+		auto start = std::chrono::system_clock::now();
+		for (int j = 0; j < 100000; ++j) {
+			ec->registerEvent(key, i, i + 1);
+			ec->registerEvent(key, i , i);
+			ec->registerEvent(key, i, i + 1);	
+		}
+		auto end = std::chrono::system_clock::now();
+		auto diff = end - start;
+		double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
+		printf("%fms for 100 000 iterations\n", elapsed);
 		i++;
+		return 0;
 	}
 
 	return 0;
