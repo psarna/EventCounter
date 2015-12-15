@@ -8,7 +8,7 @@
 
 #include "event_counter.h"
 
-typedef EventCounter<16, 4> Counter;
+typedef EventCounter<1024, 32> Counter;
 typedef Counter::Result Result;
 typedef std::array<char, 16> Key;
 
@@ -36,50 +36,49 @@ int main() {
 
 	printf("Sizeof counter is %lu\n", sizeof(Counter));	
 
-
-	std::array<std::string, 4> keys;
-	keys[0] = "abc";
-	keys[1] = "abd";
-	keys[2] = "abe";
-	keys[3] = "abf";
-
 	int i = 0;
 	for (;;) {
-		Key key = to_key(keys[i%4]);
-		ec->registerEvent(key, i, i + 1);
-		ec->registerEvent(key, i , i);
-		ec->registerEvent(key, i, i + 1);
-		if (i % 50 == 0) {
-			Result result;
-			ec->query(0, 3, result);
-			printf("i = %u\n", i);
-			ec->print();
-			printf("Query result: ");
-			result.print();
-		}
-		if (i % 133 == 0) {
-			std::vector<std::pair<Key, Result>> results;
-			ec->getTopKeys(results, 2, 2);
-			printf("TOP:i = %u\n", i);
-			ec->print();
-			printf("Query result:\n");
-			for (auto &el : results) {
-				printf("\t%s : ", el.first.data());
-				el.second.print();
-			}
-		}
+		Key key1 = to_key(std::to_string(i % 129));
+		Key key2 = to_key(std::to_string(i + 1 % 129));
+		Key key3 = to_key(std::to_string(i + 2 % 129));
+		//ec->registerEvent(key, i, i + 1);
+		//ec->registerEvent(key, i , i);
+		//ec->registerEvent(key, i, i + 1);
+		//if (i % 50 == 0) {
+		//	Result result;
+		//	ec->query(0, 3, result);
+		//	printf("i = %u\n", i);
+		//	ec->print();
+		//	printf("Query result: ");
+		//	result.print();
+		//}
+		//if (i % 133 == 0) {
+		//	std::vector<std::pair<Key, Result>> results;
+		//	ec->getTopKeys(results, 2, 2);
+		//	printf("TOP:i = %u\n", i);
+		//	ec->print();
+		//	printf("Query result:\n");
+		//	for (auto &el : results) {
+		//		printf("\t%s : ", el.first.data());
+		//		el.second.print();
+		//	}
+		//}
 		auto start = std::chrono::system_clock::now();
 		for (int j = 0; j < 100000; ++j) {
-			ec->registerEvent(key, i, i + 1);
-			ec->registerEvent(key, i , i);
-			ec->registerEvent(key, i, i + 1);	
+			ec->registerEvent(key1, i, i + 1);
+			ec->registerEvent(key2, i , i);
+			ec->registerEvent(key3, i, i + 1);	
+			ec->registerEvent(key1, i, i);	
 		}
 		auto end = std::chrono::system_clock::now();
 		auto diff = end - start;
 		double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
-		printf("%fms for 100 000 iterations\n", elapsed);
+		printf("%ldms for 400 000 registerEvent\n", (long)elapsed);
+		Result result;
+		ec->query(key2, 7, result);
+		printf("  [%d]: ", i);
+		result.print();
 		i++;
-		return 0;
 	}
 
 	return 0;

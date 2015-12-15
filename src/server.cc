@@ -7,7 +7,7 @@
 
 #include "event_counter.h"
 
-typedef EventCounter<16, 4> Counter;
+typedef EventCounter<1024, 32> Counter;
 typedef Counter::Result Result;
 
 Counter *create_counter() {
@@ -49,20 +49,20 @@ int main() {
 
 	int i = 0;
 	for (;;) {
-		usleep(10000);
-
-		ec->registerEvent(key0, i, i + 1);
-		ec->registerEvent(key0, i , i);
-		ec->registerEvent(key0, i, i + 1);
-		if (i % 50 == 0) {
-			Result result;
-			ec->query(0, 3, result);
-			printf("i = %u\n", i);
-			ec->print();
-			printf("Query result: ");
-			result.print();
-		}
-		i++;
+		usleep(1000000);
+//
+//		ec->registerEvent(key0, i, i + 1);
+//		ec->registerEvent(key0, i , i);
+//		ec->registerEvent(key0, i, i + 1);
+//		if (i % 50 == 0) {
+//			Result result;
+//			ec->query(0, 3, result);
+//			printf("i = %u\n", i);
+//			ec->print();
+//			printf("Query result: ");
+//			result.print();
+//		}
+//		i++;
 	}
 
 	return 0;
